@@ -32,6 +32,7 @@ class User extends Authenticatable
         return $this->hasMany(Micropost::class);
     }
     
+    ////↓USERのページでの表示までの命令///////////////////////////////////////////////////////////////////////////////
     public function followings()
     {
         return $this->belongsToMany(User::class, 'user_follow', 'user_id', 'follow_id')->withTimestamps();
@@ -41,6 +42,16 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(User::class, 'user_follow', 'follow_id', 'user_id')->withTimestamps();
     }
+   
+   public function favoritings()
+   {
+       return $this->belongsToMany(Micropost::class, 'user_favorite', 'user_id', 'favorite_id')->withTimestamps();
+   }
+   
+   
+
+   
+    //↓フォローの動作//
     
     public function follow($userId)
 {
@@ -77,11 +88,50 @@ public function unfollow($userId)
     }
 }
 
+public function favorite($micropostId)
+{
+   // confirming if already following
+    $exist = $this->is_favoriting($micropostId);
+    
+     if ($exist) {
+        // stop following if following
+                return false;
+    } else {
+        // do nothing if not following
+        $this->favoritings()->attach($micropostId);
+        return true;
+    }
+}
+    
+public function unfavorite($micropostId) 
+
+{
+  $exist = $this->is_favoriting($micropostId); 
+    if ($exist) {
+        // stop following if following
+        $this->favoritings()->detach($micropostId);
+        
+        return true;
+    } else {
+        // do nothing if not following
+        return false;
+}    
+    
+}
+
+///////////↓今フォローされている状況を表示//////////////////////////////////////////
+
 
 public function is_following($userId) {
     return $this->followings()->where('follow_id', $userId)->exists();
 }
-    
+
+
+public function is_favoriting($micropostId){
+    return $this->favoritings()->where('favorite_id', $micropostId)->exists();
+}
+
+/////////////////////////////////////
     public function feed_microposts()
     {
         $follow_user_ids = $this->followings()-> pluck('users.id')->toArray();
